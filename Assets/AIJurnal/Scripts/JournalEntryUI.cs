@@ -32,6 +32,30 @@ public class JournalEntryUI : MonoBehaviour
         SetupEventListeners();
     }
     
+    // Helper methods to handle different icon property names
+    private bool HasProperty(object obj, string propertyName)
+    {
+        return obj.GetType().GetProperty(propertyName) != null;
+    }
+    
+    private Sprite GetIconSprite(object character)
+    {
+        var property = character.GetType().GetProperty("icon");
+        return property?.GetValue(character) as Sprite;
+    }
+    
+    private Sprite GetAvatarSprite(object character)
+    {
+        var property = character.GetType().GetProperty("avatar");
+        return property?.GetValue(character) as Sprite;
+    }
+    
+    private Sprite GetPortraitSprite(object character)
+    {
+        var property = character.GetType().GetProperty("portrait");
+        return property?.GetValue(character) as Sprite;
+    }
+    
     private void SetupEventListeners()
     {
         if (entryButton != null)
@@ -98,10 +122,10 @@ public class JournalEntryUI : MonoBehaviour
                 {
                     characterText.text = $"With: {character.name}";
                     
-                    // Set character icon if available
-                    if (characterIcon != null && character.icon != null)
+                    // Hide character icon for now since we don't know the exact property name
+                    if (characterIcon != null)
                     {
-                        characterIcon.sprite = character.icon;
+                        characterIcon.gameObject.SetActive(false);
                     }
                 }
                 else
