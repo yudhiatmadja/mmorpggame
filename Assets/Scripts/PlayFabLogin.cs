@@ -29,10 +29,12 @@ public class PlayFabLogin : MonoBehaviour
     {
         statusText.text = "Login berhasil!";
         Debug.Log("Login sukses!");
-        // lanjut ke scene berikutnya 
-        SceneManager.LoadScene("Playground");
 
+        // Set nickname ke Photon jika digunakan
         Photon.Pun.PhotonNetwork.NickName = result.InfoResultPayload.PlayerProfile.DisplayName;
+
+        // Lanjut ke scene berikutnya
+        SceneManager.LoadScene("Playground");
     }
 
     void OnLoginFailure(PlayFabError error)
@@ -43,6 +45,11 @@ public class PlayFabLogin : MonoBehaviour
 
     public void Register()
     {
+        // Buka halaman registrasi web eksternal
+        Application.OpenURL("https://backend-mmorpg.vercel.app/register");
+
+        // Atau jika kamu ingin tetap pakai kode register dari Unity, hapus baris atas dan pakai kode di bawah ini
+        /*
         var request = new RegisterPlayFabUserRequest
         {
             Username = usernameInput.text,
@@ -59,5 +66,6 @@ public class PlayFabLogin : MonoBehaviour
             statusText.text = "Registrasi gagal: " + error.ErrorMessage;
             Debug.LogError("Registrasi gagal: " + error.GenerateErrorReport());
         });
+        */
     }
 }
