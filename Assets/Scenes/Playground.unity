@@ -2962,6 +2962,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chatInput: {fileID: 1779493091}
   chatDisplay: {fileID: 1232715008}
+  scrollRect: {fileID: 1217534050}
 --- !u!4 &1767688465
 Transform:
   m_ObjectHideFlags: 0

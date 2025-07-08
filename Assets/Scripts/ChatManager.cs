@@ -11,6 +11,7 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
 {
     public TMP_InputField chatInput;
     public TextMeshProUGUI chatDisplay;
+    public ScrollRect scrollRect;
 
     private HashSet<string> badWords = new HashSet<string>();
 
@@ -34,7 +35,7 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
             bool isFirstLine = true;
             while ((line = reader.ReadLine()) != null)
             {
-                if (isFirstLine) { isFirstLine = false; continue; } // Skip header
+                if (isFirstLine) { isFirstLine = false; continue; }
                 badWords.Add(line.Trim().ToLower());
             }
         }
@@ -59,8 +60,9 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
         if (string.IsNullOrWhiteSpace(message)) return;
 
         message = FilterBadWords(message);
+        string sender = PlayerPrefs.GetString("Username", PhotonNetwork.NickName);
 
-        object[] content = new object[] { PhotonNetwork.NickName, message };
+        object[] content = new object[] { sender, message };
 
         PhotonNetwork.RaiseEvent(
             0,
@@ -91,6 +93,10 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
             string message = (string)data[1];
 
             chatDisplay.text += $"\n<color=yellow>{sender}:</color> {message}";
+
+            // ✅ Auto-scroll ke bawah
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 0f;
         }
     }
 }
