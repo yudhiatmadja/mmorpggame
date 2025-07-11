@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: aba905124e91ece40b2a2dd0c9724eed
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 23800000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202903
+  packageName: Scene Teleportation
+  packageVersion: 1.0
+  assetPath: Assets/Scene Teleportation Kit/Demo/level_3/level_3/NavMesh.asset
+  uploadId: 462286

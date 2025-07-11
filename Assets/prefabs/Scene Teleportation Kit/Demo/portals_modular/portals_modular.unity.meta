@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 80c685ea2a0107c44a7d90ff69c8ea7c
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202903
+  packageName: Scene Teleportation
+  packageVersion: 1.0
+  assetPath: Assets/Scene Teleportation Kit/Demo/portals_modular/portals_modular.unity
+  uploadId: 462286
