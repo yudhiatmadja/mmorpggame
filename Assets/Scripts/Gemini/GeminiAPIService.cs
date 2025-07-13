@@ -14,6 +14,7 @@ public class GeminiRequest
 public class Content
 {
     public Part[] parts;
+    public string role;
 }
 
 [System.Serializable]
@@ -49,17 +50,22 @@ public class GeminiAPIService : MonoBehaviour
         url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
     }
 
-    public async Task<string> GetAIResponse(string prompt)
+    public async Task<string> GetAIResponse(string userPrompt, string systemInstruction)
     {
-        // Membuat body request sesuai format yang diminta Gemini API
+        // Membuat body request dengan instruksi sistem dan prompt pengguna
         var requestBody = new GeminiRequest
         {
             contents = new Content[]
             {
-                new Content { parts = new Part[] { new Part { text = prompt } } }
+            // Tambahkan instruksi sistem sebagai giliran pertama
+            new Content { parts = new Part[] { new Part { text = systemInstruction } }, role = "user" },
+            new Content { parts = new Part[] { new Part { text = "Baik, saya mengerti. Saya akan mengikuti instruksi tersebut." } }, role = "model" },
+            
+            // Kemudian tambahkan prompt dari pengguna
+            new Content { parts = new Part[] { new Part { text = userPrompt } }, role = "user" }
             }
         };
-        string jsonBody = JsonUtility.ToJson(requestBody);
+        string jsonBody = JsonUtility.ToJson(requestBody, true); // 'true' untuk pretty print (opsional)
 
         using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
         {

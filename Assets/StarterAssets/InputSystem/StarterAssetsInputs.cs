@@ -5,76 +5,86 @@ using UnityEngine.InputSystem;
 
 namespace StarterAssets
 {
-	public class StarterAssetsInputs : MonoBehaviour
-	{
-		[Header("Character Input Values")]
-		public Vector2 move;
-		public Vector2 look;
-		public bool jump;
-		public bool sprint;
+    public class StarterAssetsInputs : MonoBehaviour
+    {
+        [Header("Character Input Values")]
+        public Vector2 move;
+        public Vector2 look;
+        public bool jump;
+        public bool sprint;
 
-		[Header("Movement Settings")]
-		public bool analogMovement;
+        [Header("Movement Settings")]
+        public bool analogMovement;
 
-		[Header("Mouse Cursor Settings")]
-		public bool cursorLocked = true;
-		public bool cursorInputForLook = true;
+        // Saklar utama untuk mengontrol semua input
+        private bool _controlsEnabled = true;
 
 #if ENABLE_INPUT_SYSTEM
-		public void OnMove(InputValue value)
-		{
-			MoveInput(value.Get<Vector2>());
-		}
+        public void OnMove(InputValue value)
+        {
+            // Abaikan input jika kontrol dimatikan
+            if (!_controlsEnabled) return;
+            MoveInput(value.Get<Vector2>());
+        }
 
-		public void OnLook(InputValue value)
-		{
-			if(cursorInputForLook)
-			{
-				LookInput(value.Get<Vector2>());
-			}
-		}
+        public void OnLook(InputValue value)
+        {
+            // Abaikan input jika kontrol dimatikan
+            if (!_controlsEnabled) return;
+            LookInput(value.Get<Vector2>());
+        }
 
-		public void OnJump(InputValue value)
-		{
-			JumpInput(value.isPressed);
-		}
+        public void OnJump(InputValue value)
+        {
+            // Abaikan input jika kontrol dimatikan
+            if (!_controlsEnabled) return;
+            JumpInput(value.isPressed);
+        }
 
-		public void OnSprint(InputValue value)
-		{
-			SprintInput(value.isPressed);
-		}
+        public void OnSprint(InputValue value)
+        {
+            // Abaikan input jika kontrol dimatikan
+            if (!_controlsEnabled) return;
+            SprintInput(value.isPressed);
+        }
 #endif
 
+        public void MoveInput(Vector2 newMoveDirection)
+        {
+            move = newMoveDirection;
+        }
 
-		public void MoveInput(Vector2 newMoveDirection)
-		{
-			move = newMoveDirection;
-		} 
+        public void LookInput(Vector2 newLookDirection)
+        {
+            look = newLookDirection;
+        }
 
-		public void LookInput(Vector2 newLookDirection)
-		{
-			look = newLookDirection;
-		}
+        public void JumpInput(bool newJumpState)
+        {
+            jump = newJumpState;
+        }
 
-		public void JumpInput(bool newJumpState)
-		{
-			jump = newJumpState;
-		}
+        public void SprintInput(bool newSprintState)
+        {
+            sprint = newSprintState;
+        }
 
-		public void SprintInput(bool newSprintState)
-		{
-			sprint = newSprintState;
-		}
+        // === FUNGSI YANG HILANG & MENYEBABKAN ERROR ADA DI SINI ===
+        /// <summary>
+        /// Fungsi publik yang dipanggil oleh UIModeController untuk menghidupkan/mematikan kontrol.
+        /// </summary>
+        public void SetControlsEnabled(bool isEnabled)
+        {
+            _controlsEnabled = isEnabled;
 
-		private void OnApplicationFocus(bool hasFocus)
-		{
-			SetCursorState(cursorLocked);
-		}
-
-		private void SetCursorState(bool newState)
-		{
-			Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
-		}
-	}
-	
+            // Jika kontrol dinonaktifkan, langsung reset semua nilai saat ini untuk menghentikan gerakan.
+            if (!isEnabled)
+            {
+                MoveInput(Vector2.zero);
+                LookInput(Vector2.zero);
+                JumpInput(false);
+                SprintInput(false);
+            }
+        }
+    }
 }

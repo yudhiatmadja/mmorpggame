@@ -50,24 +50,32 @@ public class AIBookController : MonoBehaviour
         userInputField.onSubmit.AddListener((text) => { if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) OnSendButtonClicked(); });
     }
 
-    public void ToggleBook()
+    public void CloseBook()
     {
-        bool isActive = !aiBookObject.activeSelf;
-        aiBookObject.SetActive(isActive);
-        if (isActive)
+        // 1. Nonaktifkan object buku
+        gameObject.SetActive(false);
+
+        // 2. Minta UIModeController untuk kembali ke mode game
+        if (UIModeController.instance != null)
         {
-            // Saat buku dibuka, reset ke halaman pertama jika ada konten
-            if (bookPages.Count > 0)
-            {
-                currentPageIndex = 0;
-                DisplayPage(currentPageIndex);
-            }
+            UIModeController.instance.DeactivateUIMode();
         }
     }
 
-    public void CloseBook()
+    // Pastikan method ToggleBook Anda juga diubah jika ada
+    public void ToggleBook()
     {
-        aiBookObject.SetActive(false);
+        bool isActive = !gameObject.activeSelf;
+        gameObject.SetActive(isActive);
+
+        if (isActive)
+        {
+            UIModeController.instance.ActivateUIMode();
+        }
+        else
+        {
+            UIModeController.instance.DeactivateUIMode();
+        }
     }
 
     private async void OnSendButtonClicked()
@@ -77,23 +85,22 @@ public class AIBookController : MonoBehaviour
 
         SetProcessingState(true);
 
-        // Tambahkan prompt user ke buku terlebih dahulu
+        // Definisikan instruksi gaya atau "peran" untuk AI di sini
+        string storyTellerInstruction = "Peranmu adalah seorang pendongeng yang bijaksana. Jawablah semua pertanyaan dalam bentuk paragraf naratif yang mengalir dan mudah dipahami, seolah-olah kamu sedang bercerita di dalam sebuah buku. Jangan pernah menggunakan format daftar (bullet points) atau penomoran. Gabungkan semua poin menjadi satu cerita yang utuh.";
+
         string userEntry = $"Kamu: {prompt}\n\n";
         await ProcessAndPaginateResponse(userEntry + "AI: (Mengetik...)");
 
-        // Dapatkan respon dari AI
-        string aiResponseRaw = await geminiService.GetAIResponse(prompt);
+        // Panggil GetAIResponse dengan menyertakan instruksi
+        string aiResponseRaw = await geminiService.GetAIResponse(prompt, storyTellerInstruction);
 
-        // --- LANGKAH BARU: KONVERSI MARKDOWN KE RICH TEXT ---
         string aiResponseFormatted = MarkdownToRichText(aiResponseRaw);
-
-        // Gabungkan prompt user dengan respon AI dan perbarui buku
         string fullEntry = userEntry + "AI: " + aiResponseFormatted;
         await ProcessAndPaginateResponse(fullEntry);
 
         SetProcessingState(false);
         userInputField.text = "";
-        userInputField.ActivateInputField(); // Fokus kembali ke input field
+        userInputField.ActivateInputField();
     }
 
     // (Letakkan metode ini di dalam class AIBookController, di mana saja)
@@ -131,8 +138,6 @@ public class AIBookController : MonoBehaviour
         return 0;
     }
 
-
-    // --- GANTI SELURUH METODE LAMA ANDA DENGAN YANG INI ---
     private async Task ProcessAndPaginateResponse(string fullText)
     {
         bookPages.Clear();
@@ -152,19 +157,34 @@ public class AIBookController : MonoBehaviour
 
             if (pageLeftText.isTextTruncated)
             {
-                // Panggil fungsi manual kita untuk mendapatkan titik potong
                 int splitIndex = FindManualSplitIndex(pageLeftText);
 
-                // Pastikan splitIndex valid sebelum memotong string
+                // --- LOGIKA CERDAS UNTUK PEMOTONGAN KATA (BARU) ---
+                // Cek apakah titik potong berada di dalam teks dan bukan di spasi
+                if (splitIndex > 0 && splitIndex < remainingText.Length && !char.IsWhiteSpace(remainingText[splitIndex]))
+                {
+                    // Mundur dari titik potong untuk mencari spasi terakhir
+                    int lastSpaceIndex = remainingText.LastIndexOf(' ', splitIndex - 1);
+
+                    // Jika spasi ditemukan (dan bukan di awal sekali), gunakan itu sebagai titik potong baru
+                    if (lastSpaceIndex > 0)
+                    {
+                        splitIndex = lastSpaceIndex;
+                    }
+                    // Jika tidak ada spasi (satu kata yang sangat panjang), biarkan apa adanya (hard cut).
+                }
+
                 if (splitIndex > 0 && splitIndex <= remainingText.Length)
                 {
                     newPage.LeftText = remainingText.Substring(0, splitIndex).TrimEnd();
-                    remainingText = remainingText.Substring(splitIndex);
+
+                    // --- PEMBERSIHAN SPASI AWAL (BARU) ---
+                    // Hapus spasi di awal sisa teks sebelum lanjut ke halaman kanan
+                    remainingText = remainingText.Substring(splitIndex).TrimStart();
                 }
-                else // Jika ada masalah, anggap saja halaman kiri kosong
+                else
                 {
                     newPage.LeftText = "";
-                    // 'remainingText' tidak berubah dan akan diproses di halaman selanjutnya
                 }
             }
             else
@@ -173,7 +193,7 @@ public class AIBookController : MonoBehaviour
                 remainingText = string.Empty;
             }
 
-            // --- Proses Halaman Kanan ---
+            // --- Proses Halaman Kanan (dengan logika yang sama) ---
             if (!string.IsNullOrEmpty(remainingText))
             {
                 pageRightText.text = remainingText;
@@ -182,13 +202,25 @@ public class AIBookController : MonoBehaviour
 
                 if (pageRightText.isTextTruncated)
                 {
-                    // Panggil fungsi manual yang sama untuk halaman kanan
                     int splitIndex = FindManualSplitIndex(pageRightText);
+
+                    // --- LOGIKA CERDAS UNTUK PEMOTONGAN KATA (BARU) ---
+                    if (splitIndex > 0 && splitIndex < remainingText.Length && !char.IsWhiteSpace(remainingText[splitIndex]))
+                    {
+                        int lastSpaceIndex = remainingText.LastIndexOf(' ', splitIndex - 1);
+                        if (lastSpaceIndex > 0)
+                        {
+                            splitIndex = lastSpaceIndex;
+                        }
+                    }
 
                     if (splitIndex > 0 && splitIndex <= remainingText.Length)
                     {
                         newPage.RightText = remainingText.Substring(0, splitIndex).TrimEnd();
-                        remainingText = remainingText.Substring(splitIndex);
+
+                        // --- PEMBERSIHAN SPASI AWAL (BARU) ---
+                        // Hapus spasi di awal sisa teks untuk halaman berikutnya
+                        remainingText = remainingText.Substring(splitIndex).TrimStart();
                     }
                     else
                     {
@@ -253,28 +285,24 @@ public class AIBookController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Mengonversi string Markdown sederhana ke format Rich Text TextMeshPro.
-    /// </summary>
-    /// <param name="markdownText">Teks mentah dari AI dengan format Markdown.</param>
-    /// <returns>Teks yang sudah diformat untuk TextMeshPro.</returns>
     public static string MarkdownToRichText(string markdownText)
     {
-        // 1. Konversi Bold: **teks** menjadi <b>teks</b>
-        // Pola Regex: \*\*(.*?)\*\*
-        // - \*\* -> Mencari karakter literal "**"
-        // - (.*?) -> Menangkap semua karakter di antaranya secara non-greedy
-        // - $1 -> Merujuk pada teks yang ditangkap di dalam kurung
+        // Konversi Bold/Italic tetap ada jika Anda masih menginginkannya
         string richText = Regex.Replace(markdownText, @"\*\*(.*?)\*\*", "<b>$1</b>");
-
-        // 2. Konversi Italic: *teks* menjadi <i>teks</i> (jika diperlukan)
         richText = Regex.Replace(richText, @"\*(.*?)\*", "<i>$1</i>");
 
-        // 3. Konversi List/Bullet point: "* " di awal baris menjadi "• " dengan indentasi
-        // RegexOptions.Multiline diperlukan untuk mendeteksi awal baris (^)
-        richText = Regex.Replace(richText, @"^\* (.*)", "<indent=15%>• $1</indent>", RegexOptions.Multiline);
+        // --- TAMBAHAN: HAPUS FORMAT DAFTAR SECARA PAKSA ---
 
-        return richText;
+        // Hapus tag indentasi yang mungkin kita buat sebelumnya
+        richText = Regex.Replace(richText, @"<indent=.*?>", "");
+
+        // Hapus simbol bullet points (*, -, •) di awal baris
+        richText = Regex.Replace(richText, @"^\s*[\*\-•]\s+", "", RegexOptions.Multiline);
+
+        // Ganti beberapa baris baru berturut-turut dengan spasi agar menjadi paragraf
+        richText = Regex.Replace(richText, @"\n+", " ");
+
+        return richText.Trim(); // Trim untuk menghapus spasi di awal/akhir
     }
 
     private void SetProcessingState(bool processing)

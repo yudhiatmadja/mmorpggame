@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &1238233334482183216
+--- !u!1 &8697589287892010638
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,41 +8,41 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5477945114726539573}
-  - component: {fileID: 2283169979950612193}
+  - component: {fileID: 5730502310347095046}
+  - component: {fileID: 4070361759079094851}
   m_Layer: 0
-  m_Name: realinputmanager
+  m_Name: chatmanager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5477945114726539573
+--- !u!4 &5730502310347095046
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1238233334482183216}
+  m_GameObject: {fileID: 8697589287892010638}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 968.4773, y: 466.63074, z: -289.2724}
+  m_LocalPosition: {x: 194, y: 57, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2283169979950612193
+--- !u!114 &4070361759079094851
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1238233334482183216}
+  m_GameObject: {fileID: 8697589287892010638}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86ed6a0cd3d297f438b2939f930b50fd, type: 3}
+  m_Script: {fileID: 11500000, guid: 878225c5f458e2045b06da2a0b43c998, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aiBookController: {fileID: -6514031784035116606, guid: 8136cc6976c73fa4f99b19a49b91b2a0, type: 3}
-  ChatWorld: {fileID: 3626919103979604309, guid: 5b033af0f22ee3e4499e8031a9b56f76, type: 3}
+  chatInput: {fileID: 0}
+  chatDisplay: {fileID: 0}
