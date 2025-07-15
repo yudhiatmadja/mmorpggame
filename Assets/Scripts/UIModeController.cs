@@ -1,95 +1,79 @@
 using UnityEngine;
-using StarterAssets; // Jangan lupa tambahkan using ini
+using UnityEngine.InputSystem; // WAJIB TAMBAHKAN INI
 
 public class UIModeController : MonoBehaviour
 {
     public static UIModeController instance;
-    public CameraControllerFix cameraControllerScript; // Ini akan diisi oleh player saat runtime
+    private PlayerInput _playerInput; // Referensi ke komponen "sekring" input player
+    private int _uiModeRequestCount = 0;
 
-    // Referensi langsung ke "penjaga gerbang" input player
-    private StarterAssetsInputs _playerInputs;
-
-    public bool IsUIModeActive { get; private set; }
-
-    // Di dalam script UIModeController.cs
+    public bool IsUIModeActive => _uiModeRequestCount > 0;
 
     void Awake()
     {
         if (instance == null)
         {
             instance = this;
-            // DontDestroyOnLoad(gameObject); // <-- HAPUS ATAU BERI COMMENT BARIS INI
         }
         else
         {
-            // Logika `else if (instance != this)` Anda bisa disederhanakan menjadi ini
             Destroy(gameObject);
         }
     }
 
-    private void OnApplicationFocus(bool hasFocus)
+    private void OnDestroy()
     {
-        if (hasFocus)
+        if (instance == this)
         {
-            SyncPlayerControlState();
-            SyncCursorState();
+            instance = null;
         }
     }
 
-    public void ActivateUIMode()
+    public void RegisterPlayerInput(PlayerInput playerInput)
     {
-        IsUIModeActive = true;
-        SyncPlayerControlState();
-        SyncCursorState();
+        _playerInput = playerInput;
+        UpdateControlAndCursorState(); // Langsung sinkronisasi saat pendaftaran
     }
 
-    public void DeactivateUIMode()
+    public void RequestUIMode()
     {
-        IsUIModeActive = false;
-        SyncPlayerControlState();
-        SyncCursorState();
-    }
-
-    /// <summary>
-    /// Fungsi baru untuk mengatur status kontrol player.
-    /// </summary>
-    public void SyncPlayerControlState()
-    {
-        // Pertama, pastikan kita punya referensi ke script input player.
-        if (cameraControllerScript != null && _playerInputs == null)
+        _uiModeRequestCount++;
+        if (_uiModeRequestCount == 1)
         {
-            // Ambil komponen StarterAssetsInputs dari player yang terdaftar.
-            _playerInputs = cameraControllerScript.GetComponent<StarterAssetsInputs>();
-        }
-
-        // Jika referensi masih kosong, jangan lakukan apa-apa.
-        if (_playerInputs == null) return;
-
-        // Beri perintah langsung ke "penjaga gerbang" input.
-        if (IsUIModeActive)
-        {
-            _playerInputs.SetControlsEnabled(false);
-        }
-        else
-        {
-            _playerInputs.SetControlsEnabled(true);
+            UpdateControlAndCursorState();
         }
     }
 
-    /// <summary>
-    /// Fungsi baru untuk mengatur status kursor.
-    /// </summary>
-    private void SyncCursorState()
+    public void ReleaseUIMode()
     {
-        if (IsUIModeActive)
+        _uiModeRequestCount--;
+        if (_uiModeRequestCount < 0) _uiModeRequestCount = 0;
+
+        if (_uiModeRequestCount == 0)
         {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
+            UpdateControlAndCursorState();
         }
-        else
+    }
+
+    public void UpdateControlAndCursorState()
+    {
+        if (_playerInput == null) return;
+
+        // PERINTAH UTAMA: Matikan atau hidupkan seluruh komponen PlayerInput
+        _playerInput.enabled = !IsUIModeActive;
+
+        Cursor.visible = IsUIModeActive;
+        Cursor.lockState = IsUIModeActive ? CursorLockMode.None : CursorLockMode.Locked;
+
+        // Safety net untuk me-reset input saat kontrol kembali aktif
+        if (!IsUIModeActive)
         {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
+            StarterAssets.StarterAssetsInputs inputs = _playerInput.GetComponent<StarterAssets.StarterAssetsInputs>();
+            if (inputs != null)
+            {
+                inputs.MoveInput(Vector2.zero);
+                inputs.LookInput(Vector2.zero);
+            }
         }
     }
 }

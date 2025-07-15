@@ -50,31 +50,31 @@ public class AIBookController : MonoBehaviour
         userInputField.onSubmit.AddListener((text) => { if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) OnSendButtonClicked(); });
     }
 
-    public void CloseBook()
-    {
-        // 1. Nonaktifkan object buku
-        gameObject.SetActive(false);
+    // Di dalam AIBookController.cs
+    // Pastikan metode ToggleBook dan CloseBook Anda seperti ini:
 
-        // 2. Minta UIModeController untuk kembali ke mode game
-        if (UIModeController.instance != null)
-        {
-            UIModeController.instance.DeactivateUIMode();
-        }
-    }
-
-    // Pastikan method ToggleBook Anda juga diubah jika ada
     public void ToggleBook()
     {
-        bool isActive = !gameObject.activeSelf;
-        gameObject.SetActive(isActive);
+        bool shouldBeActive = !aiBookObject.activeSelf;
 
-        if (isActive)
+        if (shouldBeActive)
         {
-            UIModeController.instance.ActivateUIMode();
+            aiBookObject.SetActive(true);
+            UIModeController.instance.RequestUIMode();
         }
         else
         {
-            UIModeController.instance.DeactivateUIMode();
+            UIModeController.instance.ReleaseUIMode();
+            aiBookObject.SetActive(false);
+        }
+    }
+
+    public void CloseBook()
+    {
+        if (aiBookObject != null && aiBookObject.activeSelf)
+        {
+            UIModeController.instance.ReleaseUIMode();
+            aiBookObject.SetActive(false);
         }
     }
 
