@@ -20848,6 +20848,9 @@ Texture2D:
   m_PlatformBlob: 
   image data: 1
   _typelessdata: 00
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   m_StreamData:
     offset: 0
