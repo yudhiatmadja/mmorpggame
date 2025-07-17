@@ -1,82 +1,158 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Text;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 public class AIBookController : MonoBehaviour
 {
     [Header("Main Objects")]
-    [SerializeField] public GameObject aiBookObject; // GameObject AIBook (parent)
-    [SerializeField] public GeminiAPIService geminiService;
+    [SerializeField] private GameObject aiBookObject;
+    [SerializeField] private GeminiAPIService geminiService;
 
-    [Header("UI Components")]
-    [SerializeField] public TMP_InputField userInputField;
-    [SerializeField] public Button sendButton;
-    [SerializeField] public Button closeButton;
-    [SerializeField] public Button nextButton;
-    [SerializeField] public Button prevButton;
-    [SerializeField] public TextMeshProUGUI pageLeftText;
-    [SerializeField] public TextMeshProUGUI pageRightText;
-    [SerializeField] public TextMeshProUGUI pageNumberText; // Opsional: untuk nomor halaman
+    [Header("View Panels")]
+    [SerializeField] private GameObject historyViewPanel;
+    [SerializeField] private GameObject chatViewPanel;
 
-    // Kelas internal untuk menyimpan konten per halaman
-    private class PageContent
-    {
-        public string LeftText;
-        public string RightText;
-    }
+    [Header("History View Components")]
+    [SerializeField] private Transform historyContentArea; // Object "Content" dari ScrollView
+    [SerializeField] private GameObject historyButtonPrefab; // Prefab tombol yang kita buat
+    [SerializeField] private Button newChatButton;
+    [SerializeField] private Button closeButton1;
+    [SerializeField] private Button clearHistoryButton;
 
+    [Header("Chat View Components")]
+    [SerializeField] private TMP_InputField userInputField;
+    [SerializeField] private Button sendButton;
+    [SerializeField] private Button closeButton;
+    [SerializeField] private Button nextButton;
+    [SerializeField] private Button prevButton;
+    [SerializeField] private Button backToHistoryButton;
+    [SerializeField] private TextMeshProUGUI pageLeftText;
+    [SerializeField] private TextMeshProUGUI pageRightText;
+    [SerializeField] private TextMeshProUGUI pageNumberText;
+
+    // --- Variabel untuk Sistem History ---
+    private ConversationHistory savedHistory;
+    private StringBuilder currentConversationText;
+    private bool isViewingArchivedChat = false;
+
+    // --- Variabel untuk paginasi (sama seperti sebelumnya) ---
     private List<PageContent> bookPages = new List<PageContent>();
     private int currentPageIndex = 0;
     private bool isProcessing = false;
 
+    private class PageContent { public string LeftText; public string RightText; }
+
     void Start()
     {
-        // Nonaktifkan buku saat mulai
-        if (aiBookObject != null)
-        {
-            aiBookObject.SetActive(false);
-        }
-
-        // Tambahkan listener ke tombol-tombol
+        // Setup listener tombol
+        newChatButton.onClick.AddListener(StartNewConversation);
         sendButton.onClick.AddListener(OnSendButtonClicked);
-        closeButton.onClick.AddListener(CloseBook);
+        closeButton.onClick.AddListener(CloseAndSaveJournal);
+        closeButton1.onClick.AddListener(CloseAndSaveJournal);
+        backToHistoryButton.onClick.AddListener(ShowHistoryView);
         nextButton.onClick.AddListener(GoToNextPage);
+        clearHistoryButton.onClick.AddListener(OnClearHistoryClicked);
         prevButton.onClick.AddListener(GoToPreviousPage);
+        userInputField.onSubmit.AddListener((text) => { if (Input.GetKeyDown(KeyCode.Return)) OnSendButtonClicked(); });
 
-        // Listener untuk submit dengan tombol Enter
-        userInputField.onSubmit.AddListener((text) => { if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) OnSendButtonClicked(); });
+        // Muat history saat game dimulai
+        savedHistory = HistoryManager.LoadHistory();
+
+        // Pastikan semua panel nonaktif di awal
+        aiBookObject.SetActive(false);
     }
 
-    // Di dalam AIBookController.cs
-    // Pastikan metode ToggleBook dan CloseBook Anda seperti ini:
-
-    public void ToggleBook()
+    // --- FUNGSI UTAMA BARU ---
+    public void OpenJournal()
     {
-        bool shouldBeActive = !aiBookObject.activeSelf;
+        // Fungsi ini dipanggil oleh InputManager ('J')
+        aiBookObject.SetActive(true);
+        ShowHistoryView();
+    }
 
-        if (shouldBeActive)
+    private void CloseAndSaveJournal()
+    {
+        // Fungsi ini dipanggil oleh tombol Close
+        if (aiBookObject.activeSelf)
         {
-            aiBookObject.SetActive(true);
-            UIModeController.instance.RequestUIMode();
-        }
-        else
-        {
-            UIModeController.instance.ReleaseUIMode();
+            // Hanya simpan jika ini adalah chat baru dan ada isinya
+            if (!isViewingArchivedChat && currentConversationText != null && currentConversationText.Length > 0)
+            {
+                // Kita panggil tanpa await agar UI bisa langsung tertutup
+                _ = SaveCurrentConversation();
+            }
             aiBookObject.SetActive(false);
         }
     }
 
-    public void CloseBook()
+    // --- METODE UNTUK MENGATUR TAMPILAN ---
+
+    private void ShowHistoryView()
     {
-        if (aiBookObject != null && aiBookObject.activeSelf)
+        chatViewPanel.SetActive(false);
+        historyViewPanel.SetActive(true);
+        PopulateHistoryList();
+    }
+
+    private void ShowChatView()
+    {
+        historyViewPanel.SetActive(false);
+        chatViewPanel.SetActive(true);
+    }
+
+    private void PopulateHistoryList()
+    {
+        // Hapus daftar lama
+        foreach (Transform child in historyContentArea)
         {
-            UIModeController.instance.ReleaseUIMode();
-            aiBookObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+
+        // Tampilkan daftar history dari yang terbaru
+        for (int i = savedHistory.allConversations.Count - 1; i >= 0; i--)
+        {
+            GameObject buttonGO = Instantiate(historyButtonPrefab, historyContentArea);
+            int index = i; // Penting untuk ditangkap dalam scope lokal untuk listener
+
+            // Atur teks tombol
+            buttonGO.GetComponentInChildren<TextMeshProUGUI>().text = savedHistory.allConversations[index].title;
+
+            // Atur listener
+            buttonGO.GetComponent<Button>().onClick.AddListener(() => DisplayArchivedConversation(index));
         }
     }
+
+    // --- METODE UNTUK MEMULAI & MEMUAT PERCAKAPAN ---
+
+    private void StartNewConversation()
+    {
+        isViewingArchivedChat = false;
+        currentConversationText = new StringBuilder();
+        userInputField.interactable = true;
+
+        // Tampilkan halaman kosong
+        ClearBookPages();
+        DisplayPage(0);
+
+        ShowChatView();
+    }
+
+    private void DisplayArchivedConversation(int historyIndex)
+    {
+        isViewingArchivedChat = true;
+        userInputField.interactable = false; // Mode baca saja
+
+        string fullText = savedHistory.allConversations[historyIndex].fullText;
+        ProcessAndPaginateResponse(fullText); // Gunakan fungsi lama untuk menampilkan
+
+        ShowChatView();
+    }
+
+    // --- MODIFIKASI METODE LAMA ---
 
     private async void OnSendButtonClicked()
     {
@@ -85,22 +161,63 @@ public class AIBookController : MonoBehaviour
 
         SetProcessingState(true);
 
-        // Definisikan instruksi gaya atau "peran" untuk AI di sini
-        string storyTellerInstruction = "Peranmu adalah seorang pendongeng yang bijaksana. Jawablah semua pertanyaan dalam bentuk paragraf naratif yang mengalir dan mudah dipahami, seolah-olah kamu sedang bercerita di dalam sebuah buku. Jangan pernah menggunakan format daftar (bullet points) atau penomoran. Gabungkan semua poin menjadi satu cerita yang utuh.";
-
         string userEntry = $"Kamu: {prompt}\n\n";
-        await ProcessAndPaginateResponse(userEntry + "AI: (Mengetik...)");
+        // Tampilkan prompt user di buku dan simpan ke history sementara
+        currentConversationText.Append(userEntry);
+        await ProcessAndPaginateResponse(currentConversationText.ToString() + "AI: (Mengetik...)");
 
-        // Panggil GetAIResponse dengan menyertakan instruksi
+        string storyTellerInstruction = "Peranmu adalah seorang guru yang selalu memberikan jawaban dengan singkat, padat, dan ringkas. Jawablah semua pertanyaan dalam bentuk paragraf naratif yang mengalir dan mudah dipahami. Jangan pernah menggunakan format daftar (bullet points) atau penomoran.";
         string aiResponseRaw = await geminiService.GetAIResponse(prompt, storyTellerInstruction);
-
         string aiResponseFormatted = MarkdownToRichText(aiResponseRaw);
-        string fullEntry = userEntry + "AI: " + aiResponseFormatted;
-        await ProcessAndPaginateResponse(fullEntry);
+        string aiEntry = "AI: " + aiResponseFormatted + "\n\n";
+
+        // Simpan jawaban AI ke history sementara dan tampilkan
+        currentConversationText.Append(aiEntry);
+        await ProcessAndPaginateResponse(currentConversationText.ToString());
 
         SetProcessingState(false);
         userInputField.text = "";
         userInputField.ActivateInputField();
+    }
+
+    // --- FUNGSI BARU UNTUK MENYIMPAN ---
+
+    private async Task SaveCurrentConversation()
+    {
+        string conversationText = currentConversationText.ToString();
+
+
+        // 1. Definisikan peran AI dengan sangat ketat
+        string titleSystemInstruction = "Kamu adalah mesin pembuat judul. Respons HANYA dengan teks judulnya saja. Jangan gunakan kata pengantar, jangan gunakan tanda kutip, dan jangan ada penjelasan apa pun.";
+
+        // 2. Buat prompt yang lebih direktif, bukan pertanyaan
+        string titleUserPrompt = $"Berikan satu judul yang sangat singkat (maksimal 5 kata) untuk percakapan berikut: \"{conversationText}\"";
+
+        // 3. Panggil AI dengan instruksi baru
+        string title = await geminiService.GetAIResponse(titleUserPrompt, titleSystemInstruction);
+
+        // 4. Tambahkan pembersihan ekstra untuk hasil yang lebih rapi
+        title = title.Trim(); // Menghapus spasi atau baris baru di awal/akhir
+
+        // Buat entri baru
+        Conversation newEntry = new Conversation
+        {
+            title = string.IsNullOrEmpty(title) ? "Percakapan Baru" : title,
+            fullText = conversationText,
+            timestamp = System.DateTime.Now.ToString("g")
+        };
+
+        savedHistory.allConversations.Add(newEntry);
+        HistoryManager.SaveHistory(savedHistory);
+    }
+
+    // --- METODE PAGINASI & HELPER (SEBAGIAN BESAR TETAP SAMA) ---
+
+    private void ClearBookPages()
+    {
+        bookPages.Clear();
+        bookPages.Add(new PageContent { LeftText = "", RightText = "" });
+        currentPageIndex = 0;
     }
 
     // (Letakkan metode ini di dalam class AIBookController, di mana saja)
@@ -303,6 +420,20 @@ public class AIBookController : MonoBehaviour
         richText = Regex.Replace(richText, @"\n+", " ");
 
         return richText.Trim(); // Trim untuk menghapus spasi di awal/akhir
+    }
+
+    public void OnClearHistoryClicked()
+    {
+        // 1. Kosongkan daftar history yang ada di memori
+        savedHistory.allConversations.Clear();
+
+        // 2. Simpan daftar yang sudah kosong ke file, menimpa file lama
+        HistoryManager.SaveHistory(savedHistory);
+
+        // 3. Perbarui tampilan UI untuk menunjukkan bahwa daftar sudah kosong
+        PopulateHistoryList();
+
+        Debug.Log("Conversation history cleared.");
     }
 
     private void SetProcessingState(bool processing)
