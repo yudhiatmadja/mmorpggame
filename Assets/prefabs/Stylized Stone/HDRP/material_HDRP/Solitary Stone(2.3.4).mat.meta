@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f438eccda6374b94093316baea2dccb3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 300610
+  packageName: Stylized Stone Package
+  packageVersion: 1.0
+  assetPath: Assets/Stylized Stone/HDRP/material_HDRP/Solitary Stone(2.3.4).mat
+  uploadId: 703895
