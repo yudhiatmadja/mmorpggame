@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2c03622ebbb90224a94513e7ac6819f9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 300610
+  packageName: Stylized Stone Package
+  packageVersion: 1.0
+  assetPath: Assets/Stylized Stone/URP/material_URP/Stacked_Boulder2.mat
+  uploadId: 703895
