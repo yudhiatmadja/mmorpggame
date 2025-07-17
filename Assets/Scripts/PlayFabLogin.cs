@@ -9,6 +9,14 @@ public class PlayFabLogin : MonoBehaviour
     public TMP_InputField usernameInput;
     public TMP_InputField passwordInput;
     public TMP_Text statusText;
+    public GameObject statusBackground; // ← background image (misalnya Panel atau Image)
+
+    void Start()
+    {
+        statusText.gameObject.SetActive(false);
+        if (statusBackground != null)
+            statusBackground.SetActive(false); // sembunyikan saat awal
+    }
 
     public void Login()
     {
@@ -27,17 +35,16 @@ public class PlayFabLogin : MonoBehaviour
 
     void OnLoginSuccess(LoginResult result)
     {
-        statusText.text = "Login berhasil!";
+        ShowStatus("Login berhasil!");
         Debug.Log("Login sukses!");
-        // lanjut ke scene berikutnya 
-        SceneManager.LoadScene("Playground");
 
         Photon.Pun.PhotonNetwork.NickName = result.InfoResultPayload.PlayerProfile.DisplayName;
+        SceneManager.LoadScene("Playground");
     }
 
     void OnLoginFailure(PlayFabError error)
     {
-        statusText.text = "Login gagal: " + error.ErrorMessage;
+        ShowStatus("Login gagal: " + error.ErrorMessage);
         Debug.LogError("Login gagal: " + error.GenerateErrorReport());
     }
 
@@ -52,12 +59,20 @@ public class PlayFabLogin : MonoBehaviour
 
         PlayFabClientAPI.RegisterPlayFabUser(request, result =>
         {
-            statusText.text = "Registrasi berhasil!";
+            ShowStatus("Registrasi berhasil!");
             Debug.Log("Registrasi sukses!");
         }, error =>
         {
-            statusText.text = "Registrasi gagal: " + error.ErrorMessage;
+            ShowStatus("Registrasi gagal: " + error.ErrorMessage);
             Debug.LogError("Registrasi gagal: " + error.GenerateErrorReport());
         });
+    }
+
+    void ShowStatus(string message)
+    {
+        statusText.text = message;
+        statusText.gameObject.SetActive(true);
+        if (statusBackground != null)
+            statusBackground.SetActive(true);
     }
 }
