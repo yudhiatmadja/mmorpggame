@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 206cf33732694c349aecf7f032b13cdf
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 300610
+  packageName: Stylized Stone Package
+  packageVersion: 1.0
+  assetPath: Assets/Stylized Stone/material/Stacked_Boulder4.mat
+  uploadId: 703895

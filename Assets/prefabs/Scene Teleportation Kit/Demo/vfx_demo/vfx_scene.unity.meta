@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ebf13c733b5251644be1c5a1d743c8b6
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 202903
+  packageName: Scene Teleportation
+  packageVersion: 1.0
+  assetPath: Assets/Scene Teleportation Kit/Demo/vfx_demo/vfx_scene.unity
+  uploadId: 462286
