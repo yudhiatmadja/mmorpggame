@@ -1,66 +1,79 @@
 using UnityEngine;
+using UnityEngine.InputSystem; // WAJIB TAMBAHKAN INI
 
 public class UIModeController : MonoBehaviour
 {
-    // 1. Buat instance statis (kunci dari Singleton)
     public static UIModeController instance;
+    private PlayerInput _playerInput; // Referensi ke komponen "sekring" input player
+    private int _uiModeRequestCount = 0;
 
-    // Referensi ke skrip kamera, akan diisi secara otomatis
-    [HideInInspector] // Kita sembunyikan dari inspector agar tidak diisi manual
-    public CameraControllerFix cameraControllerScript;
+    public bool IsUIModeActive => _uiModeRequestCount > 0;
 
-    // Awake() dipanggil sebelum Start()
     void Awake()
     {
-        // 2. Logika Singleton
-        // Jika belum ada instance, jadikan object ini sebagai instance utama
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject); // Jangan hancurkan object ini saat pindah scene
         }
-        // Jika sudah ada instance lain, hancurkan object ini agar tidak ada duplikat
-        else if (instance != this)
+        else
         {
             Destroy(gameObject);
         }
-        DeactivateUIMode();
     }
 
-    void Update()
+    private void OnDestroy()
     {
-        // Cek jika referensi kamera belum ada, jangan lakukan apa-apa
-        if (cameraControllerScript == null)
+        if (instance == this)
         {
-            return;
-        }
-
-        // Logika input tetap sama
-        if (Input.GetKeyDown(KeyCode.LeftAlt))
-        {
-            ActivateUIMode();
-        }
-        else if (Input.GetKeyUp(KeyCode.LeftAlt))
-        {
-            DeactivateUIMode();
+            instance = null;
         }
     }
 
-    public void ActivateUIMode()
+    public void RegisterPlayerInput(PlayerInput playerInput)
     {
-        if (cameraControllerScript == null) return;
-
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
-        cameraControllerScript.DisablePlayerCamera();
+        _playerInput = playerInput;
+        UpdateControlAndCursorState(); // Langsung sinkronisasi saat pendaftaran
     }
 
-    public void DeactivateUIMode()
+    public void RequestUIMode()
     {
-        if (cameraControllerScript == null) return;
+        _uiModeRequestCount++;
+        if (_uiModeRequestCount == 1)
+        {
+            UpdateControlAndCursorState();
+        }
+    }
 
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-        cameraControllerScript.EnablePlayerCamera();
+    public void ReleaseUIMode()
+    {
+        _uiModeRequestCount--;
+        if (_uiModeRequestCount < 0) _uiModeRequestCount = 0;
+
+        if (_uiModeRequestCount == 0)
+        {
+            UpdateControlAndCursorState();
+        }
+    }
+
+    public void UpdateControlAndCursorState()
+    {
+        if (_playerInput == null) return;
+
+        // PERINTAH UTAMA: Matikan atau hidupkan seluruh komponen PlayerInput
+        _playerInput.enabled = !IsUIModeActive;
+
+        Cursor.visible = IsUIModeActive;
+        Cursor.lockState = IsUIModeActive ? CursorLockMode.None : CursorLockMode.Locked;
+
+        // Safety net untuk me-reset input saat kontrol kembali aktif
+        if (!IsUIModeActive)
+        {
+            StarterAssets.StarterAssetsInputs inputs = _playerInput.GetComponent<StarterAssets.StarterAssetsInputs>();
+            if (inputs != null)
+            {
+                inputs.MoveInput(Vector2.zero);
+                inputs.LookInput(Vector2.zero);
+            }
+        }
     }
 }

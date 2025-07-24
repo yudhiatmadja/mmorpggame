@@ -1,11 +1,15 @@
 fileFormatVersion: 2
 <<<<<<< HEAD
+<<<<<<< HEAD
 guid: c5ecf055d18ea0145bf612fdb68563e8
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
 =======
 guid: 5fa329cda4378e445abea9a25d5c7ffe
+=======
+guid: d98b41345360bf7459d63ff846adbcd4
+>>>>>>> origin/Chatbot
 folderAsset: yes
 DefaultImporter:
 >>>>>>> origin/AIJournal
