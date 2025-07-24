@@ -3,18 +3,66 @@ using UnityEngine.UI;
 using Photon.Pun;
 using TMPro;
 using Photon.Realtime;
-using ExitGames.Client.Photon; // kalau pakai TextMeshPro
+using ExitGames.Client.Photon;
+using System.Collections.Generic;
+using System.IO;
 
 public class ChatManager : MonoBehaviour, IOnEventCallback
 {
     public TMP_InputField chatInput;
     public TextMeshProUGUI chatDisplay;
+    public ScrollRect scrollRect;
+
+    private HashSet<string> badWords = new HashSet<string>();
+
+    void Start()
+    {
+        LoadBadWords();
+    }
+
+    void LoadBadWords()
+    {
+        TextAsset file = Resources.Load<TextAsset>("badwords");
+        if (file == null)
+        {
+            Debug.LogWarning("badwords.csv not found in Resources folder.");
+            return;
+        }
+
+        using (StringReader reader = new StringReader(file.text))
+        {
+            string line;
+            bool isFirstLine = true;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (isFirstLine) { isFirstLine = false; continue; }
+                badWords.Add(line.Trim().ToLower());
+            }
+        }
+    }
+
+    string FilterBadWords(string input)
+    {
+        string[] words = input.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            string cleanWord = words[i].ToLower().Trim();
+            if (badWords.Contains(cleanWord))
+            {
+                words[i] = new string('*', cleanWord.Length);
+            }
+        }
+        return string.Join(" ", words);
+    }
 
     public void SendChat(string message)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
 
-        object[] content = new object[] { PhotonNetwork.NickName, message };
+        message = FilterBadWords(message);
+        string sender = PlayerPrefs.GetString("Username", PhotonNetwork.NickName);
+
+        object[] content = new object[] { sender, message };
 
         PhotonNetwork.RaiseEvent(
             0,
@@ -26,7 +74,6 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
         chatInput.text = "";
     }
 
-    // 🔄 Register listener saat aktif
     private void OnEnable()
     {
         PhotonNetwork.AddCallbackTarget(this);
@@ -37,7 +84,6 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
         PhotonNetwork.RemoveCallbackTarget(this);
     }
 
-    // ✅ Listener utama
     public void OnEvent(EventData photonEvent)
     {
         if (photonEvent.Code == 0)
@@ -47,6 +93,10 @@ public class ChatManager : MonoBehaviour, IOnEventCallback
             string message = (string)data[1];
 
             chatDisplay.text += $"\n<color=yellow>{sender}:</color> {message}";
+
+            // ✅ Auto-scroll ke bawah
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 0f;
         }
     }
 }
