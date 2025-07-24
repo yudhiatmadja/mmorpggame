@@ -126,7 +126,11 @@ Material:
     - _SpecColor: {r: 0.078431375, g: 0.078431375, b: 0.078431375, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+<<<<<<< HEAD
 --- !u!114 &7202458630437851652
+=======
+--- !u!114 &2737761210703294096
+>>>>>>> origin/UpdateVoiceV2
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}

@@ -63,7 +63,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
+<<<<<<< HEAD
         m_Texture: {fileID: 0}
+=======
+        m_Texture: {fileID: 2800000, guid: a3cc890ba79fb47449fb51893aa9b363, type: 3}
+>>>>>>> origin/UpdateVoiceV2
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -138,7 +142,11 @@ Material:
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+<<<<<<< HEAD
 --- !u!114 &4468247893211654737
+=======
+--- !u!114 &8315765356182492336
+>>>>>>> origin/UpdateVoiceV2
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
