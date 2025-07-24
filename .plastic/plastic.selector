@@ -1,4 +1,0 @@
-repository "mmorpg 2025-06-20_19-58-09/mmorpg@18967295241246@cloud"
-  path "/"
-    br "/main"
-    co "/main"

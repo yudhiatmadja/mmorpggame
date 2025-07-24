@@ -1,8 +1,14 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: 049c1c50160e1e8458c9218ecefca456
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
+=======
+guid: 12e34119f8e2e904c9e1e637277bb7eb
+folderAsset: yes
+DefaultImporter:
+>>>>>>> origin/AIJournal
   userData: 
   assetBundleName: 
   assetBundleVariant: 
