@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 2e1bf01748dc43b409872d16e3f8c56f
+timeCreated: 1571963166
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/CollisionHelpers/Materials/No
+    Name.mat
+  uploadId: 335979

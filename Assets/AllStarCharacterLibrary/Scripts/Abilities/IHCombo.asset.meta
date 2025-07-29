@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5359cdd0278647f419f3ece7c43cb406
+timeCreated: 1497631475
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Scripts/Abilities/IHCombo.asset
+  uploadId: 335979

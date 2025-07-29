@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d9f59d5f8a61c1646a840cb3fa3b8c59
+timeCreated: 1486135833
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/CollisionHelpers/Materials/grey.mat
+  uploadId: 335979

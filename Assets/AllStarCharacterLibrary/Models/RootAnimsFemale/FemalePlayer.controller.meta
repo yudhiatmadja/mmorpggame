@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9f8eb855b693b644e945fed05bfcc090
+timeCreated: 1450621421
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/RootAnimsFemale/FemalePlayer.controller
+  uploadId: 335979

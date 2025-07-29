@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: cc7640cd035254f4390e4a4872d8e983
+timeCreated: 1487163378
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/RootAnimsMale/PainLayer.controller
+  uploadId: 335979

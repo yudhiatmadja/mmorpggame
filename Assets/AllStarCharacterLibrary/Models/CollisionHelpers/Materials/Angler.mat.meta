@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 46915f236d6025b48a9f24bf35975bf5
+timeCreated: 1449993904
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/CollisionHelpers/Materials/Angler.mat
+  uploadId: 335979

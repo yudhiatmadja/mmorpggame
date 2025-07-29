@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 371fa73fc26eb0648b85ced29d267429
+timeCreated: 1498040536
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/CollisionHelpers/movementTarget.prefab
+  uploadId: 335979

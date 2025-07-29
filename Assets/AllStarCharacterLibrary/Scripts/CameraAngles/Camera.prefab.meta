@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d00a486c8f9b62f4f944f2aef8d071ea
+timeCreated: 1498044139
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Scripts/CameraAngles/Camera.prefab
+  uploadId: 335979

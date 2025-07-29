@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7090f64d8af090b49a39c104573467f2
+timeCreated: 1498040698
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/CollisionHelpers/HealthBar.prefab
+  uploadId: 335979

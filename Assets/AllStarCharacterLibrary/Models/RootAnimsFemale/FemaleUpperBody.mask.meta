@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fa94fdec891da2b4e9473bba1886444a
+timeCreated: 1487351227
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/RootAnimsFemale/FemaleUpperBody.mask
+  uploadId: 335979

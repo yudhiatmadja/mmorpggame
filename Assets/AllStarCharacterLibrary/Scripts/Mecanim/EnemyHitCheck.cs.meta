@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 839b8800abd612c4a93de0ccac3b00ec
+timeCreated: 1485805939
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Scripts/Mecanim/EnemyHitCheck.cs
+  uploadId: 335979

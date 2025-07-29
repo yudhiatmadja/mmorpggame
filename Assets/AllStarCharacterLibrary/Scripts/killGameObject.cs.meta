@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: edc2184fdf1dd1e499873c5050f975fb
+timeCreated: 1497088429
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Scripts/killGameObject.cs
+  uploadId: 335979

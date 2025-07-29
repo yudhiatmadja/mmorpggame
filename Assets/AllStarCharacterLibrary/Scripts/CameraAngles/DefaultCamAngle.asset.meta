@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f4b621a9bee6d3c458d9cd98a10b2919
+timeCreated: 1497686753
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Scripts/CameraAngles/DefaultCamAngle.asset
+  uploadId: 335979

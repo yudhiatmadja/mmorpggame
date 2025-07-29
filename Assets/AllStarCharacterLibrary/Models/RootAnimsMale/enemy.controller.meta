@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bf4c45ec83f2ab34c91d06ec499fd2f7
+timeCreated: 1496997849
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/RootAnimsMale/enemy.controller
+  uploadId: 335979

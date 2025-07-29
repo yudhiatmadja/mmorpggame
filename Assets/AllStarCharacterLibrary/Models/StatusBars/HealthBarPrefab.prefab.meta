@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: afaba55d597f8fd4f8052651ba0fbb89
+timeCreated: 1485448289
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 44041
+  packageName: Female Warrior Princess
+  packageVersion: 3.0
+  assetPath: Assets/AllStarCharacterLibrary/Models/StatusBars/HealthBarPrefab.prefab
+  uploadId: 335979
