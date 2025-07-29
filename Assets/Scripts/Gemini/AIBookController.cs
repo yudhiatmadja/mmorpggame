@@ -1,3 +1,4 @@
+// File: AIBookController.cs
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -5,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System;
+using System.Collections;
 
 public class AIBookController : MonoBehaviour
 {
@@ -17,8 +20,8 @@ public class AIBookController : MonoBehaviour
     [SerializeField] private GameObject chatViewPanel;
 
     [Header("History View Components")]
-    [SerializeField] private Transform historyContentArea; // Object "Content" dari ScrollView
-    [SerializeField] private GameObject historyButtonPrefab; // Prefab tombol yang kita buat
+    [SerializeField] private Transform historyContentArea;
+    [SerializeField] private GameObject historyButtonPrefab;
     [SerializeField] private Button newChatButton;
     [SerializeField] private Button closeButton1;
     [SerializeField] private Button clearHistoryButton;
@@ -34,74 +37,212 @@ public class AIBookController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI pageRightText;
     [SerializeField] private TextMeshProUGUI pageNumberText;
 
-    // --- Variabel untuk Sistem History ---
+    // Variabel untuk Sistem History
     private ConversationHistory savedHistory;
     private StringBuilder currentConversationText;
     private bool isViewingArchivedChat = false;
+    private bool isHistoryLoaded = false;
 
-    // --- Variabel untuk paginasi (sama seperti sebelumnya) ---
+    // Variabel untuk paginasi
     private List<PageContent> bookPages = new List<PageContent>();
     private int currentPageIndex = 0;
     private bool isProcessing = false;
 
-    private class PageContent { public string LeftText; public string RightText; }
+    // Variabel untuk manajemen cursor
+    private bool journalIsOpen = false;
+    private float lastMouseActivity = 0f;
+    private const float CURSOR_HIDE_DELAY = 3f; // Waktu delay sebelum cursor disembunyikan (dalam detik)
+
+    private class PageContent 
+    { 
+        public string LeftText; 
+        public string RightText; 
+    }
 
     void Start()
     {
         // Setup listener tombol
         newChatButton.onClick.AddListener(StartNewConversation);
         sendButton.onClick.AddListener(OnSendButtonClicked);
-        closeButton.onClick.AddListener(CloseAndSaveJournal);
-        closeButton1.onClick.AddListener(CloseAndSaveJournal);
+        closeButton.onClick.AddListener(() => StartCoroutine(CloseAndSaveJournalCoroutine()));
+        closeButton1.onClick.AddListener(() => StartCoroutine(CloseAndSaveJournalCoroutine()));
         backToHistoryButton.onClick.AddListener(ShowHistoryView);
         nextButton.onClick.AddListener(GoToNextPage);
         clearHistoryButton.onClick.AddListener(OnClearHistoryClicked);
         prevButton.onClick.AddListener(GoToPreviousPage);
         userInputField.onSubmit.AddListener((text) => { if (Input.GetKeyDown(KeyCode.Return)) OnSendButtonClicked(); });
+        
+        // Langganan event dari HistoryManager
+        HistoryManager.OnHistoryLoaded += HandleHistoryLoaded;
+        HistoryManager.OnHistorySaved += HandleHistorySaved;
+        HistoryManager.OnError += HandleHistoryError;
 
-        // Muat history saat game dimulai
-        savedHistory = HistoryManager.LoadHistory();
+        // Delay load history untuk memastikan login selesai
+        StartCoroutine(DelayedLoadHistory());
 
         // Pastikan semua panel nonaktif di awal
         aiBookObject.SetActive(false);
+        
+        // Inisialisasi cursor management
+        lastMouseActivity = Time.time;
     }
 
-    // --- FUNGSI UTAMA BARU ---
+    void Update()
+    {
+        // Kelola cursor hanya jika journal sedang terbuka
+        if (journalIsOpen)
+        {
+            ManageCursor();
+        }
+    }
+
+    private void ManageCursor()
+    {
+        // Deteksi aktivitas mouse
+        if (Input.inputString != "" || 
+            Input.GetAxis("Mouse X") != 0 || 
+            Input.GetAxis("Mouse Y") != 0 || 
+            Input.anyKeyDown ||
+            Input.GetMouseButtonDown(0) || 
+            Input.GetMouseButtonDown(1) || 
+            Input.GetMouseButtonDown(2))
+        {
+            // Update waktu aktivitas terakhir
+            lastMouseActivity = Time.time;
+            
+            // Pastikan cursor terlihat
+            ShowCursor();
+        }
+        
+        // Sembunyikan cursor setelah tidak ada aktivitas selama waktu tertentu
+        // Tapi tetap tampilkan jika sedang mengetik di input field
+        if (Time.time - lastMouseActivity > CURSOR_HIDE_DELAY && 
+            !userInputField.isFocused)
+        {
+            HideCursor();
+        }
+    }
+
+    private void ShowCursor()
+    {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+    }
+
+    private void HideCursor()
+    {
+        Cursor.visible = false;
+    }
+
+    // Coroutine untuk delay load
+    private IEnumerator DelayedLoadHistory()
+    {
+        // Tunggu beberapa detik untuk memastikan login selesai
+        yield return new WaitForSeconds(2f);
+        
+        Debug.Log("Memulai load history dengan delay...");
+        HistoryManager.LoadHistory();
+    }
+
+    private void OnDestroy()
+    {
+        HistoryManager.OnHistoryLoaded -= HandleHistoryLoaded;
+        HistoryManager.OnHistorySaved -= HandleHistorySaved;
+        HistoryManager.OnError -= HandleHistoryError;
+        
+        // Pastikan cursor terlihat kembali saat object dihancurkan
+        ShowCursor();
+    }
+
+    private void HandleHistoryLoaded()
+    {
+        Debug.Log("Callback 'HandleHistoryLoaded' dipanggil. Data histori siap.");
+        isHistoryLoaded = true;
+        savedHistory = HistoryManager.GetCurrentHistory();
+
+        Debug.Log($"History loaded dengan {savedHistory.allConversations.Count} percakapan");
+
+        if (aiBookObject.activeSelf && historyViewPanel.activeSelf)
+        {
+            PopulateHistoryList();
+        }
+    }
+
+    private void HandleHistorySaved()
+    {
+        Debug.Log("History berhasil disimpan!");
+    }
+
+    private void HandleHistoryError(string errorMessage)
+    {
+        Debug.LogError($"Terjadi kesalahan dengan HistoryManager: {errorMessage}");
+    }
+
+    // FUNGSI UTAMA
     public void OpenJournal()
     {
-        // Fungsi ini dipanggil oleh InputManager ('J')
         aiBookObject.SetActive(true);
+        journalIsOpen = true;
+        
+        // Reset cursor management
+        lastMouseActivity = Time.time;
+        ShowCursor();
+        
         ShowHistoryView();
+
+        if (isHistoryLoaded)
+        {
+            PopulateHistoryList();
+        }
+        else
+        {
+            Debug.Log("Menunggu data histori dari PlayFab...");
+        }
     }
 
-    private void CloseAndSaveJournal()
+    // Coroutine wrapper untuk CloseAndSaveJournal
+    private IEnumerator CloseAndSaveJournalCoroutine()
     {
-        // Fungsi ini dipanggil oleh tombol Close
         if (aiBookObject.activeSelf)
         {
-            // Hanya simpan jika ini adalah chat baru dan ada isinya
             if (!isViewingArchivedChat && currentConversationText != null && currentConversationText.Length > 0)
             {
-                // Kita panggil tanpa await agar UI bisa langsung tertutup
-                _ = SaveCurrentConversation();
+                Debug.Log("Menyimpan percakapan saat ini...");
+                yield return StartCoroutine(SaveCurrentConversationCoroutine());
             }
+            else
+            {
+                Debug.Log("Tidak ada percakapan baru untuk disimpan.");
+            }
+            
+            // Set journal sebagai tertutup dan restore cursor
+            journalIsOpen = false;
+            ShowCursor();
+            
             aiBookObject.SetActive(false);
         }
     }
 
-    // --- METODE UNTUK MENGATUR TAMPILAN ---
-
+    // METODE UNTUK MENGATUR TAMPILAN
     private void ShowHistoryView()
     {
         chatViewPanel.SetActive(false);
         historyViewPanel.SetActive(true);
         PopulateHistoryList();
+        
+        // Update aktivitas mouse saat ganti view
+        lastMouseActivity = Time.time;
+        ShowCursor();
     }
 
     private void ShowChatView()
     {
         historyViewPanel.SetActive(false);
         chatViewPanel.SetActive(true);
+        
+        // Update aktivitas mouse saat ganti view
+        lastMouseActivity = Time.time;
+        ShowCursor();
     }
 
     private void PopulateHistoryList()
@@ -116,103 +257,142 @@ public class AIBookController : MonoBehaviour
         for (int i = savedHistory.allConversations.Count - 1; i >= 0; i--)
         {
             GameObject buttonGO = Instantiate(historyButtonPrefab, historyContentArea);
-            int index = i; // Penting untuk ditangkap dalam scope lokal untuk listener
+            int index = i;
 
-            // Atur teks tombol
             buttonGO.GetComponentInChildren<TextMeshProUGUI>().text = savedHistory.allConversations[index].title;
-
-            // Atur listener
-            buttonGO.GetComponent<Button>().onClick.AddListener(() => DisplayArchivedConversation(index));
+            buttonGO.GetComponent<Button>().onClick.AddListener(() => {
+                DisplayArchivedConversation(index);
+                // Update aktivitas mouse saat klik button
+                lastMouseActivity = Time.time;
+                ShowCursor();
+            });
         }
     }
 
-    // --- METODE UNTUK MEMULAI & MEMUAT PERCAKAPAN ---
-
+    // METODE UNTUK MEMULAI & MEMUAT PERCAKAPAN
     private void StartNewConversation()
     {
         isViewingArchivedChat = false;
         currentConversationText = new StringBuilder();
         userInputField.interactable = true;
 
-        // Tampilkan halaman kosong
         ClearBookPages();
         DisplayPage(0);
 
         ShowChatView();
+        
+        // Focus ke input field dan update cursor
+        userInputField.ActivateInputField();
+        lastMouseActivity = Time.time;
+        ShowCursor();
     }
 
     private void DisplayArchivedConversation(int historyIndex)
     {
         isViewingArchivedChat = true;
-        userInputField.interactable = false; // Mode baca saja
+        userInputField.interactable = false;
 
         string fullText = savedHistory.allConversations[historyIndex].fullText;
-        ProcessAndPaginateResponse(fullText); // Gunakan fungsi lama untuk menampilkan
+        _ = ProcessAndPaginateResponse(fullText);
 
         ShowChatView();
     }
-
-    // --- MODIFIKASI METODE LAMA ---
 
     private async void OnSendButtonClicked()
     {
         string prompt = userInputField.text;
         if (string.IsNullOrWhiteSpace(prompt) || isProcessing) return;
 
+        // Update cursor activity saat mengirim pesan
+        lastMouseActivity = Time.time;
+        ShowCursor();
+
         SetProcessingState(true);
 
         string userEntry = $"Kamu: {prompt}\n\n";
-        // Tampilkan prompt user di buku dan simpan ke history sementara
         currentConversationText.Append(userEntry);
         await ProcessAndPaginateResponse(currentConversationText.ToString() + "AI: (Mengetik...)");
 
-        string storyTellerInstruction = "Peranmu adalah seorang guru yang selalu memberikan jawaban dengan singkat, padat, dan ringkas. Jawablah semua pertanyaan dalam bentuk paragraf naratif yang mengalir dan mudah dipahami. Jangan pernah menggunakan format daftar (bullet points) atau penomoran.";
+        string storyTellerInstruction = "Peranmu adalah seorang guru yang selalu memberikan jawaban dengan singkat, padat, dan ringkas. Jawablah semua pertanyaan dalam bentuk paragraf naratif yang mengalir dan mudah dipahami. Jangan pernah menggunakan format daftar (bullet points) atau penomoran. PENTING: Jika ditanya tentang siapa yang membuatmu, menciptakanmu, atau siapa creatormu, jawab dengan: 'Saya Journal AI yang diciptakan oleh 5 Kage Studio dan dipublish oleh Unimasoft.'";
         string aiResponseRaw = await geminiService.GetAIResponse(prompt, storyTellerInstruction);
         string aiResponseFormatted = MarkdownToRichText(aiResponseRaw);
         string aiEntry = "AI: " + aiResponseFormatted + "\n\n";
 
-        // Simpan jawaban AI ke history sementara dan tampilkan
         currentConversationText.Append(aiEntry);
         await ProcessAndPaginateResponse(currentConversationText.ToString());
 
         SetProcessingState(false);
         userInputField.text = "";
         userInputField.ActivateInputField();
+        
+        // Update cursor activity setelah response
+        lastMouseActivity = Time.time;
+        ShowCursor();
     }
 
-    // --- FUNGSI BARU UNTUK MENYIMPAN ---
+    // Coroutine wrapper untuk SaveCurrentConversation
+    private IEnumerator SaveCurrentConversationCoroutine()
+    {
+        var task = SaveCurrentConversation();
+        yield return new WaitUntil(() => task.IsCompleted);
+        
+        if (task.Exception != null)
+        {
+            Debug.LogError($"Error saving conversation: {task.Exception}");
+        }
+    }
 
     private async Task SaveCurrentConversation()
     {
-        string conversationText = currentConversationText.ToString();
-
-
-        // 1. Definisikan peran AI dengan sangat ketat
-        string titleSystemInstruction = "Kamu adalah mesin pembuat judul. Respons HANYA dengan teks judulnya saja. Jangan gunakan kata pengantar, jangan gunakan tanda kutip, dan jangan ada penjelasan apa pun.";
-
-        // 2. Buat prompt yang lebih direktif, bukan pertanyaan
-        string titleUserPrompt = $"Berikan satu judul yang sangat singkat (maksimal 5 kata) untuk percakapan berikut: \"{conversationText}\"";
-
-        // 3. Panggil AI dengan instruksi baru
-        string title = await geminiService.GetAIResponse(titleUserPrompt, titleSystemInstruction);
-
-        // 4. Tambahkan pembersihan ekstra untuk hasil yang lebih rapi
-        title = title.Trim(); // Menghapus spasi atau baris baru di awal/akhir
-
-        // Buat entri baru
-        Conversation newEntry = new Conversation
+        try
         {
-            title = string.IsNullOrEmpty(title) ? "Percakapan Baru" : title,
-            fullText = conversationText,
-            timestamp = System.DateTime.Now.ToString("g")
-        };
+            string conversationText = currentConversationText.ToString();
+            
+            if (string.IsNullOrWhiteSpace(conversationText) || conversationText.Length < 10)
+            {
+                Debug.LogWarning("Percakapan terlalu pendek untuk disimpan.");
+                return;
+            }
 
-        savedHistory.allConversations.Add(newEntry);
-        HistoryManager.SaveHistory(savedHistory);
+            Debug.Log($"Menyimpan percakapan dengan panjang: {conversationText.Length} karakter");
+
+            string titleSystemInstruction = "Kamu adalah mesin pembuat judul. Respons HANYA dengan teks judulnya saja. Jangan gunakan kata pengantar, jangan gunakan tanda kutip, dan jangan ada penjelasan apa pun.";
+            string titleUserPrompt = $"Berikan satu judul yang sangat singkat (maksimal 5 kata) untuk percakapan berikut: \"{conversationText.Substring(0, Mathf.Min(200, conversationText.Length))}\"";
+
+            string title = await geminiService.GetAIResponse(titleUserPrompt, titleSystemInstruction);
+            title = title.Trim();
+
+            Conversation newEntry = new Conversation
+            {
+                title = string.IsNullOrEmpty(title) ? "Percakapan Baru" : title,
+                fullText = conversationText,
+                timestamp = DateTime.Now.ToString("g")
+            };
+
+            Debug.Log($"Menambahkan percakapan baru: '{newEntry.title}'");
+
+            if (savedHistory == null)
+            {
+                savedHistory = HistoryManager.GetCurrentHistory();
+            }
+
+            savedHistory.allConversations.Add(newEntry);
+            
+            Debug.Log($"Total percakapan sekarang: {savedHistory.allConversations.Count}");
+
+            HistoryManager.SaveHistory();
+            
+            currentConversationText = null;
+            
+            Debug.Log("Percakapan berhasil ditambahkan dan disimpan.");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error saat menyimpan percakapan: {ex.Message}");
+        }
     }
 
-    // --- METODE PAGINASI & HELPER (SEBAGIAN BESAR TETAP SAMA) ---
-
+    // METODE PAGINASI & HELPER
     private void ClearBookPages()
     {
         bookPages.Clear();
@@ -220,38 +400,23 @@ public class AIBookController : MonoBehaviour
         currentPageIndex = 0;
     }
 
-    // (Letakkan metode ini di dalam class AIBookController, di mana saja)
-
-    /// <summary>
-    /// Menemukan indeks untuk memotong teks secara manual dengan memeriksa karakter
-    /// terakhir yang terlihat. Ini bekerja di semua versi TextMeshPro.
-    /// </summary>
-    /// <param name="textComponent">Komponen TextMeshPro yang akan diperiksa.</param>
-    /// <returns>Indeks karakter pertama yang tidak terlihat.</returns>
     private int FindManualSplitIndex(TextMeshProUGUI textComponent)
     {
         if (!textComponent.isTextTruncated)
         {
-            // Jika tidak terpotong, tidak ada yang perlu dihitung.
             return textComponent.text.Length;
         }
 
-        // Dapatkan info dari teks yang sudah di-render
         TMP_TextInfo textInfo = textComponent.textInfo;
 
-        // Cari dari belakang, karakter terakhir yang masih terlihat
         for (int i = textInfo.characterCount - 1; i >= 0; --i)
         {
-            // Periksa apakah karakter ini ada di dalam array dan terlihat
             if (i < textInfo.characterInfo.Length && textInfo.characterInfo[i].isVisible)
             {
-                // Kita menemukan karakter terakhir yang terlihat pada indeks 'i'.
-                // Maka, kita harus memotong teks SETELAH karakter ini.
                 return i + 1;
             }
         }
 
-        // Jika karena suatu alasan tidak ada karakter yang terlihat, potong dari awal.
         return 0;
     }
 
@@ -267,7 +432,7 @@ public class AIBookController : MonoBehaviour
         {
             var newPage = new PageContent();
 
-            // --- Proses Halaman Kiri ---
+            // Proses Halaman Kiri
             pageLeftText.text = remainingText;
             await Task.Yield();
             Canvas.ForceUpdateCanvases();
@@ -276,27 +441,18 @@ public class AIBookController : MonoBehaviour
             {
                 int splitIndex = FindManualSplitIndex(pageLeftText);
 
-                // --- LOGIKA CERDAS UNTUK PEMOTONGAN KATA (BARU) ---
-                // Cek apakah titik potong berada di dalam teks dan bukan di spasi
                 if (splitIndex > 0 && splitIndex < remainingText.Length && !char.IsWhiteSpace(remainingText[splitIndex]))
                 {
-                    // Mundur dari titik potong untuk mencari spasi terakhir
                     int lastSpaceIndex = remainingText.LastIndexOf(' ', splitIndex - 1);
-
-                    // Jika spasi ditemukan (dan bukan di awal sekali), gunakan itu sebagai titik potong baru
                     if (lastSpaceIndex > 0)
                     {
                         splitIndex = lastSpaceIndex;
                     }
-                    // Jika tidak ada spasi (satu kata yang sangat panjang), biarkan apa adanya (hard cut).
                 }
 
                 if (splitIndex > 0 && splitIndex <= remainingText.Length)
                 {
                     newPage.LeftText = remainingText.Substring(0, splitIndex).TrimEnd();
-
-                    // --- PEMBERSIHAN SPASI AWAL (BARU) ---
-                    // Hapus spasi di awal sisa teks sebelum lanjut ke halaman kanan
                     remainingText = remainingText.Substring(splitIndex).TrimStart();
                 }
                 else
@@ -310,7 +466,7 @@ public class AIBookController : MonoBehaviour
                 remainingText = string.Empty;
             }
 
-            // --- Proses Halaman Kanan (dengan logika yang sama) ---
+            // Proses Halaman Kanan
             if (!string.IsNullOrEmpty(remainingText))
             {
                 pageRightText.text = remainingText;
@@ -321,7 +477,6 @@ public class AIBookController : MonoBehaviour
                 {
                     int splitIndex = FindManualSplitIndex(pageRightText);
 
-                    // --- LOGIKA CERDAS UNTUK PEMOTONGAN KATA (BARU) ---
                     if (splitIndex > 0 && splitIndex < remainingText.Length && !char.IsWhiteSpace(remainingText[splitIndex]))
                     {
                         int lastSpaceIndex = remainingText.LastIndexOf(' ', splitIndex - 1);
@@ -334,9 +489,6 @@ public class AIBookController : MonoBehaviour
                     if (splitIndex > 0 && splitIndex <= remainingText.Length)
                     {
                         newPage.RightText = remainingText.Substring(0, splitIndex).TrimEnd();
-
-                        // --- PEMBERSIHAN SPASI AWAL (BARU) ---
-                        // Hapus spasi di awal sisa teks untuk halaman berikutnya
                         remainingText = remainingText.Substring(splitIndex).TrimStart();
                     }
                     else
@@ -372,6 +524,10 @@ public class AIBookController : MonoBehaviour
         pageRightText.text = page.RightText;
 
         UpdateNavigationButtons();
+        
+        // Update cursor activity saat ganti halaman
+        lastMouseActivity = Time.time;
+        ShowCursor();
     }
 
     private void UpdateNavigationButtons()
@@ -381,7 +537,6 @@ public class AIBookController : MonoBehaviour
 
         if (pageNumberText != null)
         {
-            // Menampilkan nomor halaman (misal: 1/3)
             pageNumberText.text = $"{currentPageIndex * 2 + 1} - {currentPageIndex * 2 + 2}";
         }
     }
@@ -404,36 +559,36 @@ public class AIBookController : MonoBehaviour
 
     public static string MarkdownToRichText(string markdownText)
     {
-        // Konversi Bold/Italic tetap ada jika Anda masih menginginkannya
         string richText = Regex.Replace(markdownText, @"\*\*(.*?)\*\*", "<b>$1</b>");
         richText = Regex.Replace(richText, @"\*(.*?)\*", "<i>$1</i>");
 
-        // --- TAMBAHAN: HAPUS FORMAT DAFTAR SECARA PAKSA ---
-
-        // Hapus tag indentasi yang mungkin kita buat sebelumnya
         richText = Regex.Replace(richText, @"<indent=.*?>", "");
-
-        // Hapus simbol bullet points (*, -, •) di awal baris
-        richText = Regex.Replace(richText, @"^\s*[\*\-•]\s+", "", RegexOptions.Multiline);
-
-        // Ganti beberapa baris baru berturut-turut dengan spasi agar menjadi paragraf
+        richText = Regex.Replace(richText, @"^\s*[\*\-â€¢]\s+", "", RegexOptions.Multiline);
         richText = Regex.Replace(richText, @"\n+", " ");
 
-        return richText.Trim(); // Trim untuk menghapus spasi di awal/akhir
+        return richText.Trim();
     }
 
     public void OnClearHistoryClicked()
     {
-        // 1. Kosongkan daftar history yang ada di memori
-        savedHistory.allConversations.Clear();
-
-        // 2. Simpan daftar yang sudah kosong ke file, menimpa file lama
-        HistoryManager.SaveHistory(savedHistory);
-
-        // 3. Perbarui tampilan UI untuk menunjukkan bahwa daftar sudah kosong
-        PopulateHistoryList();
-
-        Debug.Log("Conversation history cleared.");
+        try
+        {
+            Debug.Log("Menghapus semua history...");
+            
+            HistoryManager.ClearAllConversations();
+            HistoryManager.SaveHistory();
+            PopulateHistoryList();
+            
+            // Update cursor activity saat clear history
+            lastMouseActivity = Time.time;
+            ShowCursor();
+            
+            Debug.Log("History berhasil dihapus dan disimpan ke PlayFab.");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error saat menghapus history: {ex.Message}");
+        }
     }
 
     private void SetProcessingState(bool processing)
@@ -441,5 +596,12 @@ public class AIBookController : MonoBehaviour
         isProcessing = processing;
         userInputField.interactable = !processing;
         sendButton.interactable = !processing;
+        
+        // Update cursor activity saat mengubah processing state
+        if (processing)
+        {
+            lastMouseActivity = Time.time;
+            ShowCursor();
+        }
     }
 }
